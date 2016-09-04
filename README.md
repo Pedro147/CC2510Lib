@@ -1,9 +1,10 @@
 CC2510Lib
 =====
 
-this is a fork of the CCLib (https://github.com/wavesoft/CCLib)
+this is a fork of the CC2510Lib (https://github.com/fishpepper/CC2510Lib)
+that is a fork of the CCLib (https://github.com/wavesoft/CCLib)
 
-STATUS: WORK IN PROGRESS! NOT YET WORKING!
+STATUS: Flash read/write confirmed working on raspberry pi V2.
 
 working:
 - connecting
@@ -11,60 +12,28 @@ working:
 - erase chip
 - write & verify flash using cc_write_flash.py (tested with hex from sdcc)
 
-i ported it to support programming of a cc2510f16 chip. adding cc251x support is trivial, see ccdebugger.py and chip id code
+fishpepper ported it to support programming of a cc2510f16 chip. adding cc251x support is trivial, see ccdebugger.py and chip id code.
+I then ported it from Arduino to raspbian/raspberry, as i did not manage to get the arduino code or the voltage dividers work correctly.
+Using the raspberry the voltage levels are just right, and nothing other then the wires are needed.
+Also this managed to increase flash speed a lot :)
+
+Just also wanna thank fishpepper for his work, i'm surely admire your work!
 
 Wiring
 ------
 
-The arduino library is tailored for 5V Teensy/Arduino chips, and therefore provide two separate DD pins, for use with voltage dividers to 3.3V.
-
-Start with the **CCLib_proxy** example from CCLib and change the pin configuration in order to match your setup. For your reference, here is the wiring diagram with voltage dividers.
-
-    For the DD Pin:
-    
-     <CC_DD_O> --[ 2k2 ]-- <CC_DD_I> --[ 3k3 ]-- <GND>
-                                |
-                               {DD}
-     
-    For the DC Pin:
-    
-     <CC_DC> --[ 2k2 ]-- {DC} --[ 3k3 ]-- <GND>
-     
-    For the RST Pin:
-     
-     <CC_DC> --[ 2k2 ]-- {RST} --[ 3k3 ]-- <GND>
-
-Where {DD},{DC} and {RST} are the pins on the CCxxxx chip.
+    3.3V VCC     = Pin 1
+    DBG DATA     = Pin 11
+    DBG CLOCK    = Pin 7
+    GND          = Pin 6
+    RESET        = Pin 13
 
 Usage
 -----
 
-1. Open the CCLib_proxy example.
-2. Change the `LED`, `CC_RST`, `CC_DC`, `CC_DD_I` and `CC_DD_O` constants to match your configuration.
-3. Flash it to your Teensy/Arduino
-4. Connect it to your CCxxxx chip
-5. Use the python scripts from the Python/ directory to read/flash your chip.
-
-Protocol
---------
-
-The protocol used between your computer and your Arduino is quite simple and not really fault-proof. This was intended as a pure proxy mechanism in order to experiment with the CC Debugging protocol from the computer. Therefore, if you interrupt any operation in the middle, you will most probably have to unplug and re-plug your Teensy/Arduino. That said, here is the protocol:
-
-Since most of the debug commands are at max 4-bytes long, we are sending from the computer a constant-sized frame of 4-bytes:
-
-    +-----------+-----------+-----------+-----------+
-    |  Command  |   Data 0  |   Data 1  |   Data 2  |
-    +-----------+-----------+-----------+-----------+
-
-The only exception is the brust-write command (CMD_BRUSTWR), where up to 2048 bytes might follow the 4-byte frame.
-
-The Teensy/Arduino will always reply with the following 3-byte long frame:
-
-    +-----------+-----------+-----------+
-    |   Status  |    ResH   |  Err/ResL |
-    +-----------+-----------+-----------+
-
-If the status code is `ANS_OK`, the `ResH:ResL` word contains the resulting word (or byte) of the command. If it's `ANS_ERR`, the `ResL` byte contains the error code.
+1. Install WiringPi-Python described at https://github.com/WiringPi/WiringPi-Python
+2. Connect all 5 wires as described above.
+3. Use the python scripts from the Python/ directory to read/flash your chip.
 
 
 Disclaimer
@@ -75,6 +44,7 @@ i sucessfully flashed a cc2510f16 chip with the scripts provided with this proje
 License
 -------
 
+Copyright (c) 2016 Jimmy Wennlund - github.com/jimmyw
 Copyright (c) 2015 Simon Schulz - github.com/fishpepper
 
 This program is free software: you can redistribute it and/or modify

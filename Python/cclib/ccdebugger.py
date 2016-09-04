@@ -17,6 +17,7 @@
 #
 
 from cclib.cchex import toHex, fromHex
+from cclib.ccraspberry import ccraspberry
 import serial
 import struct
 import math
@@ -69,15 +70,16 @@ class CCDebugger:
 		Initialize serial port
 		"""
 		
-		self.show_debug_info = False
+		self.show_debug_info = True
 
 		self.debug_active = False
 
 		# Open port
 		try:
-			self.ser = serial.Serial(port, 115200, timeout=1, rtscts=False)
-		except:
-			raise IOError("Could not open port %s" % port)
+			#self.ser = serial.Serial(port, 115200, timeout=1, rtscts=False)
+                        self.ser = ccraspberry()
+		except Exception as e:
+			raise IOError("Could not open port %s" % e)
 
 		# Ping
 		if self.ping():
@@ -122,6 +124,7 @@ class CCDebugger:
 		status = ord(self.ser.read())
 		bH = ord(self.ser.read())
 		bL = ord(self.ser.read())
+                # print "reading status: %02X bH: %02X bL: %02X" % ((status), (bH), (bL) )
 
 		# Handle error responses
 		if status == ANS_ERROR:
@@ -146,7 +149,7 @@ class CCDebugger:
 		"""
 		Send the specified frame to the output queue
 		"""
-		#print "sending \\x%02X\\x%02X\\x%02X\\x%02X" % ((cmd), (c1), (c2), (c3) )
+                #print "sending cmd: %02X c1: %02X c2: %02X c3: %02X" % ((cmd), (c1), (c2), (c3) )
 		# Send the 4-byte command frame
 		self.ser.write( chr(cmd)+chr(c1)+chr(c2)+chr(c3) )
 		self.ser.flush()
@@ -315,9 +318,9 @@ class CCDebugger:
 		# Send chip erase command & update debug status
 		self.debugStatus = self.sendFrame(CMD_CHPERASE)
 
-		# Wait until CHIP_ERASE_BUSY goes down
+		# Wait until CHIP_ERASE_DONE goes down
 		s = self.getStatus()
-		while (( s & 0x80 ) != 0):
+		while (( s & 0x80 ) == 0):
 			time.sleep(0.01)
 			s = self.getStatus()
 
@@ -358,10 +361,13 @@ class CCDebugger:
 		a = self.instri( 0x90, offset )		# MOV DPTR,#data16
 
 		# Read bytes
+                c = 0
 		for b in bytes:
+                        if (self.show_debug_info) and ((c % 8)) == 0: print ">>> loading byte %d of %d" % (c, len(bytes))
 			a = self.instr ( 0x74, b )		# MOV A,#data
 			a = self.instr ( 0xF0 )			# MOVX @DPTR,A
 			a = self.instr ( 0xA3 )			# INC DPTR
+                        c = c + 1
 
 		# Return bytes written
 		return len(bytes)
@@ -386,6 +392,7 @@ class CCDebugger:
 
 		# Read bytes
 		for i in range(0, size):
+                        if (self.show_debug_info) and ((i % 8)) == 0: print ">>> reading byte %d of %d" % (i, size)
 			a = self.instr ( 0xE4 )			# MOVX A,@DPTR
 			a = self.instr ( 0x93 )			# MOVX A,@DPTR
 			ans.append(a)
@@ -512,8 +519,8 @@ class CCDebugger:
 		#calc words per flash page
 		words_per_flash_page = self.flashPageSize / self.flashWordSize
 		
-		#print "words_per_flash_page = %d" % (words_per_flash_page)
-		#print "flashWordSize = %d" % (self.flashWordSize)
+		print "words_per_flash_page = %d" % (words_per_flash_page)
+		print "flashWordSize = %d" % (self.flashWordSize)
 		if (erase_page): 
 			print "[page erased]",
 			
@@ -572,14 +579,14 @@ class CCDebugger:
 		self.halt()
 		
 		#send data to xdata memory:
-		if (self.show_debug_info): print "copying data to xdata"
+		if (self.show_debug_info): print ">> copying data to xdata"
 		self.writeXDATA(0xF000, inputArray)
 		
 		#send program to xdata mem
-		if (self.show_debug_info): print "copying flash routine to xdata"
+		if (self.show_debug_info): print ">> copying flash routine to xdata"
 		self.writeXDATA(0xF000 + self.flashPageSize, routine)
 	
-		if (self.show_debug_info): print "executing code"
+		if (self.show_debug_info): print ">> executing code"
 		#execute MOV MEMCTR, (bank * 16) + 1; 
 		self.instr(0x75, 0xC7, 0x51)
 		
@@ -590,7 +597,7 @@ class CCDebugger:
 		self.resume()
 		
 		
-		if (self.show_debug_info): print "page write running",
+		if (self.show_debug_info): print ">> page write running",
 		
 		#set some timeout (2 seconds)
 		timeout = 200
@@ -788,6 +795,7 @@ class CCDebugger:
 			if verify:
 				verifyBytes = self.readCODE(fAddr, iLen)
 				for i in range(0, iLen):
+		                        if (self.show_debug_info): print ">>> Reading byte %d of %d" % (i, iLen),
 					if verifyBytes[i] != data[iOfs+i]:
 						if flashRetries < 3:
 							print "[Flash Error @0x%04x, will retry]" % (fAddr+i),
@@ -829,9 +837,9 @@ def renderDebugStatus(cfg):
 	Visualize debug status
 	"""
 	if (cfg & 0x80) != 0:
-		print " [X] CHIP_ERASE_BUSY"
+		print " [X] CHIP_ERASE_DONE"
 	else:
-		print " [ ] CHIP_ERASE_BUSY"
+		print " [ ] CHIP_ERASE_DONE"
 	if (cfg & 0x40) != 0:
 		print " [X] PCON_IDLE"
 	else:

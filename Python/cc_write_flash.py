@@ -135,13 +135,13 @@ if maxMem > (dbg.flashSize):
 	sys.exit(4)
 
 
-print "> flashing:"
 try:
-	#enter debug mode
-	dbg.enter(); 
+        print "> enter debug:"
+        dbg.enter();
+        
 	
 	if (full_erase):
-		"> %3d%%: erasing chip..." % (100*(1.0/17)),
+		print "> %3d%%: erasing chip..." % (100*(1.0/17)),
 		dbg.chipErase()
 		time.sleep(1)
 		print "done"
@@ -151,6 +151,7 @@ try:
 	emptyPage = bytearray([0xFF] * dbg.flashPageSize)
 	
 	for p in range(maxPages):
+                print "> flashing page: %d" % p
 		pageAddress = p*dbg.flashPageSize
 		
 		#data to write
@@ -164,6 +165,7 @@ try:
 			sys.stdout.flush()
 			dbg.writeFlashPage(pageAddress, pageData, do_page_erase)
 			#read back & verify
+			print "> %3d%%: verifying page %d of %d..." % ((100*((2.0+p)/17)), p, maxPages-1),
 			readPage = dbg.readFlashPage(pageAddress)
 			#verify:
 			if (readPage == pageData):

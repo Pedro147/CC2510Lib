@@ -58,8 +58,8 @@ try:
 		sys.stdout.flush()
 		
 		readPage = dbg.readFlashPage(pageAddress)
-		for x in readPage:
-			print "%02X" % (x), 
+		#for x in readPage:
+		#	print "%02X" % (x),
 		#
 		hexFile.stack(readPage)
 		

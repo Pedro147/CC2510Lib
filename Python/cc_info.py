@@ -43,11 +43,11 @@ print " IEEE Address : %s" % dbg.getSerial()
 print "           PC : %04x" % dbg.getPC()
 
 # Get bluegiga-specific info
-binfo = dbg.getBLEInfo()
-print "\nFirmware information:"
-print "      License : %s" % binfo['license']
-print "   BT Address : %s" % binfo['btaddr']
-print " Hardware Ver : %02x" % binfo['hwver']
+#binfo = dbg.getBLEInfo()
+#print "\nFirmware information:"
+#print "      License : %s" % binfo['license']
+#print "   BT Address : %s" % binfo['btaddr']
+#print " Hardware Ver : %02x" % binfo['hwver']
 
 print "\nDebug status:"
 renderDebugStatus(dbg.debugStatus)
